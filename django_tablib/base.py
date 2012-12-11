@@ -13,6 +13,9 @@ mimetype_map = {
     }
 
 class BaseDataset(tablib.Dataset):
+
+    encoding = 'utf-8'
+
     def __init__(self):
         data = map(self._getattrs, self.queryset)
         super(BaseDataset, self).__init__(headers=self.header_list, *data)
@@ -24,14 +27,17 @@ class BaseDataset(tablib.Dataset):
         if t is str:
             return value
         elif t in [datetime.date, datetime.datetime]:
-            return date(value, 'SHORT_DATE_FORMAT')
+            return date(value, 'SHORT_DATE_FORMAT').encode("utf-8")
         else:
-            return smart_unicode(value).encode('utf8')
-    
+            return smart_unicode(value).encode(self.encoding)
+
     def _getattrs(self, obj):
         attrs = []
         for attr in self.attr_list:
-            attr = self._cleanval(getattr(obj, attr), attr)
+            if callable(attr):
+                attr = self._cleanval(attr(obj), attr)
+            else:
+                attr = self._cleanval(getattr(obj, attr), attr)
             attrs.append(attr)
         return attrs
 
